@@ -136,16 +136,17 @@ scene.add(infoPanel);
 let reticleTimer = null;
 
 const reticle = new THREE.Mesh(
-  new THREE.RingGeometry(.06,.08,32).rotateX(-Math.PI/2),
+  new THREE.CircleGeometry(0.006, 24), // tiny dot
   new THREE.MeshBasicMaterial({
-    color:0xffffff,
-    transparent:true,
-    opacity:.35
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.8
   })
 );
 
-reticle.matrixAutoUpdate=false;
-reticle.visible=false;
+reticle.rotation.x = -Math.PI / 2;
+reticle.matrixAutoUpdate = false;
+reticle.visible = false;
 
 scene.add(reticle);
 
@@ -233,9 +234,10 @@ scene.add(controller);
 document.getElementById("arContainer").appendChild(
 
   ARButton.createButton(renderer,{
-    requiredFeatures:["local-floor"],
-    optionalFeatures:["hit-test"]
-  })
+  requiredFeatures:["local-floor"],
+  optionalFeatures:["hit-test","dom-overlay"],
+  domOverlay: { root: document.body }
+})
 
 );
 
