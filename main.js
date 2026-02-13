@@ -1,186 +1,265 @@
-// main.js - robust Three.js WebXR AR starter
 import * as THREE from "three";
 import { ARButton } from "three/addons/webxr/ARButton.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
+//////////////////////////////////////////////////////
+// UI helper
+//////////////////////////////////////////////////////
 
-const hintEl = document.getElementById("hint");
-const arContainer = document.getElementById("arContainer");
+const hint = document.getElementById("hint");
 
-function hint(msg){
+function log(msg){
   console.log("[AR]", msg);
-  hintEl.textContent = msg;
+  hint.textContent = msg;
 }
 
-/* Scene + renderer */
+//////////////////////////////////////////////////////
+// Scene + performance tuned renderer
+//////////////////////////////////////////////////////
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera();
 
-const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-renderer.setPixelRatio(window.devicePixelRatio || 1);
+const renderer = new THREE.WebGLRenderer({
+  antialias:false,
+  alpha:true,
+  powerPreference:"high-performance"
+});
+
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 
-/* Ensure the canvas is background layer (z-index 0). */
-const canvas = renderer.domElement;
-canvas.style.zIndex = "0";
+document.body.appendChild(renderer.domElement);
 
-/* Append canvas AFTER we build the AR button below so UI sits above */
-document.body.appendChild(canvas);
+//////////////////////////////////////////////////////
+// Light (cheap)
+//////////////////////////////////////////////////////
 
-/* simple lighting */
 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1));
 
-/* load model (model.glb must be in same folder and reachable via HTTPS) */
-let model = null;
-new GLTFLoader().load(
-  'model.glb',
-  gltf => {
-    model = gltf.scene;
-    model.scale.set(0.35,0.35,0.35);
-    model.visible = false;
-    scene.add(model);
-    hint("Model loaded — open AR");
-  },
-  undefined,
-  err => {
-    console.error("GLTF load error:", err);
-    hint("Model load failed (check path)");
-  }
+//////////////////////////////////////////////////////
+// Therapy ball model
+//////////////////////////////////////////////////////
+
+let ball;
+
+new GLTFLoader().load("model.glb",(gltf)=>{
+
+  ball = gltf.scene;
+
+  // Real-world scale: 7 cm diameter
+  ball.scale.setScalar(0.07);
+
+  ball.visible = false;
+
+  // freeze matrices for performance
+  ball.traverse(obj=>{
+    obj.matrixAutoUpdate = false;
+  });
+
+  scene.add(ball);
+
+  log("Model ready — enter AR");
+
+});
+
+//////////////////////////////////////////////////////
+// Floating info panel
+//////////////////////////////////////////////////////
+
+function createTextPanel(){
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 512;
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "white";
+  ctx.font = "28px sans-serif";
+
+  const lines = [
+    "Latex free: Compact & portable",
+    "Blunt spikes provide better grip",
+    "Eco friendly version available",
+    "Suitable for sensitive skin"
+  ];
+
+  lines.forEach((line,i)=>{
+    ctx.fillText(line, 40, 70 + i*90);
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+
+  const panel = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.25,0.12),
+    new THREE.MeshBasicMaterial({
+      map:texture,
+      transparent:true
+    })
+  );
+
+  return panel;
+}
+
+const infoPanel = createTextPanel();
+infoPanel.visible = false;
+scene.add(infoPanel);
+
+//////////////////////////////////////////////////////
+// Reticle
+//////////////////////////////////////////////////////
+
+const reticle = new THREE.Mesh(
+  new THREE.RingGeometry(.08,.1,32).rotateX(-Math.PI/2),
+  new THREE.MeshBasicMaterial({color:0x00aaff})
 );
 
-/* reticle for hit-test */
-const reticle = new THREE.Mesh(
-  new THREE.RingGeometry(0.08, 0.10, 32).rotateX(-Math.PI/2),
-  new THREE.MeshBasicMaterial({ color: 0x00aaff })
-);
-reticle.matrixAutoUpdate = false;
-reticle.visible = false;
+reticle.matrixAutoUpdate=false;
+reticle.visible=false;
+
 scene.add(reticle);
 
-/* fallback placement (1.5m in front of camera) */
-function placeFallbackImmediately(){
-  if(!model) return;
+//////////////////////////////////////////////////////
+// Placement
+//////////////////////////////////////////////////////
+
+function placeFallback(){
+
+  if(!ball) return;
+
   const cam = renderer.xr.getCamera(camera);
-  // camera may be stereo group; use its position/quaternion
+
   const pos = new THREE.Vector3();
   const quat = new THREE.Quaternion();
+
   cam.getWorldPosition(pos);
   cam.getWorldQuaternion(quat);
 
-  const forward = new THREE.Vector3(0,0,-1).applyQuaternion(quat).multiplyScalar(1.5);
-  model.position.copy(pos).add(forward);
-  model.quaternion.copy(quat);
-  model.visible = true;
-  hint("Placed (fallback). Move phone to scan.");
+  const forward = new THREE.Vector3(0,0,-1)
+    .applyQuaternion(quat)
+    .multiplyScalar(.4);
+
+  ball.position.copy(pos).add(forward);
+  ball.quaternion.copy(quat);
+  ball.updateMatrix();
+
+  infoPanel.position.copy(ball.position).add(new THREE.Vector3(.15,.05,0));
+  infoPanel.visible = true;
+
+  ball.visible = true;
+
+  log("Placed");
 }
 
-/* controller selection (tap) */
+//////////////////////////////////////////////////////
+// Controller tap
+//////////////////////////////////////////////////////
+
 const controller = renderer.xr.getController(0);
-controller.addEventListener('select', () => {
-  if (reticle.visible && model) {
-    model.position.setFromMatrixPosition(reticle.matrix);
-    model.visible = true;
-    hint("Placed on surface");
-  } else {
-    hint("No surface — move phone or use fallback");
+
+controller.addEventListener("select",()=>{
+
+  if(reticle.visible && ball){
+
+    ball.position.setFromMatrixPosition(reticle.matrix);
+    ball.quaternion.identity();
+    ball.updateMatrix();
+
+    infoPanel.position.copy(ball.position).add(new THREE.Vector3(.15,.05,0));
+    infoPanel.visible = true;
+
+    ball.visible=true;
+
+    log("Placed on surface");
+
   }
+
 });
+
 scene.add(controller);
 
-/* Create the real ARButton and style it, then put it in arContainer.
-   Important: ARButton.createButton creates a button that starts XR via a trusted gesture.
-*/
-const arButton = ARButton.createButton(renderer, {
-  requiredFeatures: ['local-floor'],   // minimal required
-  optionalFeatures: ['hit-test']      // enable hit-test if available
-});
+//////////////////////////////////////////////////////
+// AR Button
+//////////////////////////////////////////////////////
 
-/* Style the produced button so it looks like your UI and is always on top */
-arButton.style.display = "";
-arButton.style.padding = "12px 20px";
-arButton.style.fontSize = "16px";
-arButton.style.fontWeight = "700";
-arButton.style.borderRadius = "10px";
-arButton.style.background = "#00d0c0";
-arButton.style.color = "#002";
-arButton.style.border = "none";
-arButton.style.cursor = "pointer";
-arButton.style.zIndex = "4000";
-arButton.style.pointerEvents = "auto";
+document.getElementById("arContainer").appendChild(
 
-/* Some browsers return an <a> (link) instead of a button when XR unsupported.
-   Keep it visible so users see instructions (link may point to 'https://immersiveweb.dev').
-*/
-arContainer.appendChild(arButton);
+  ARButton.createButton(renderer,{
+    requiredFeatures:["local-floor"],
+    optionalFeatures:["hit-test"]
+  })
 
-/* XR state for hit-test */
-let hitTestSource = null;
-let hitTestSourceRequested = false;
+);
 
-/* Main render loop */
-renderer.setAnimationLoop((time, frame) => {
-  if (frame) {
+//////////////////////////////////////////////////////
+// Hit-test logic
+//////////////////////////////////////////////////////
+
+let hitSource=null;
+let hitRequested=false;
+
+renderer.setAnimationLoop((t,frame)=>{
+
+  if(frame){
+
     const session = renderer.xr.getSession();
-    const referenceSpace = renderer.xr.getReferenceSpace();
+    const refSpace = renderer.xr.getReferenceSpace();
 
-    // request hit-test source once per session (safe-guarded)
-    if (session && !hitTestSourceRequested) {
-      hitTestSourceRequested = true;
+    if(session && !hitRequested){
 
-      session.requestReferenceSpace('viewer').then((viewerSpace) => {
-        session.requestHitTestSource({ space: viewerSpace }).then((source) => {
-          hitTestSource = source;
-          console.log('hitTestSource ready');
-        }).catch(err => {
-          console.warn('requestHitTestSource failed', err);
+      session.requestReferenceSpace("viewer").then(space=>{
+        session.requestHitTestSource({space}).then(src=>{
+          hitSource=src;
         });
-      }).catch(err => {
-        console.warn('requestReferenceSpace(viewer) failed', err);
       });
 
-      // ensure fallback placement soon after session starts
-      setTimeout(() => {
-        try { placeFallbackImmediately(); } catch(e) { console.warn(e); }
-      }, 700);
+      hitRequested=true;
+
+      setTimeout(placeFallback,700);
     }
 
-    if (hitTestSource) {
-      const hitTestResults = frame.getHitTestResults(hitTestSource);
-      if (hitTestResults.length > 0) {
-        const hit = hitTestResults[0];
-        const pose = hit.getPose(referenceSpace);
-        if (pose) {
-          reticle.visible = true;
-          reticle.matrix.fromArray(pose.transform.matrix);
-          hint("Surface detected — tap to place");
-        }
-      } else {
-        reticle.visible = false;
-        hint("Scanning for surfaces...");
+    if(hitSource){
+
+      const hits = frame.getHitTestResults(hitSource);
+
+      if(hits.length){
+
+        const pose = hits[0].getPose(refSpace);
+
+        reticle.visible=true;
+        reticle.matrix.fromArray(pose.transform.matrix);
+
+        log("Surface detected — tap");
+
+      }else{
+
+        reticle.visible=false;
+        log("Scanning…");
+
       }
     }
+
+    // billboard text always faces camera
+    if(infoPanel.visible){
+
+      infoPanel.lookAt(camera.position);
+
+    }
   }
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
+
 });
 
-/* Clean up hitTest when session ends (avoid stale sources) */
-function onSessionEnd() {
-  if (hitTestSource) {
-    try { hitTestSource.cancel(); } catch(e){}
-    hitTestSource = null;
-  }
-  hitTestSourceRequested = false;
-  reticle.visible = false;
-  if (model) model.visible = false;
-  hint("Session ended — open AR again");
-}
+//////////////////////////////////////////////////////
+// Resize
+//////////////////////////////////////////////////////
 
-/* Attach session end handler after ARButton creates the session - listen to global XR sessions */
-navigator.xr && navigator.xr.addEventListener && navigator.xr.addEventListener('sessionend', onSessionEnd);
-
-/* Window resize */
-window.addEventListener('resize', () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
+window.addEventListener("resize",()=>{
+  renderer.setSize(window.innerWidth,window.innerHeight);
 });
