@@ -15,95 +15,15 @@
   </script>
 
   <style>
-    html,body{
-      margin:0;
-      height:100%;
-      font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background:black;
-      color:white;
-    }
-
-    /* Hint bubble */
-    #hint{
-      position:fixed;
-      top:14px;
-      left:50%;
-      transform:translateX(-50%);
-      padding:8px 14px;
-      border-radius:999px;
-      background:rgba(0,0,0,.6);
-      z-index:9999;
-      font-size:14px;
-      pointer-events:none;
-    }
-
-    /* Info toggle */
-    #toggleInfo{
-      position:fixed;
-      top:14px;
-      right:14px;
-      padding:8px 14px;
-      border:none;
-      border-radius:999px;
-      background:rgba(255,255,255,.12);
-      color:white;
-      font-weight:bold;
-      backdrop-filter:blur(6px);
-      opacity:0;
-      pointer-events:none;
-      transition:.25s;
-      z-index:9999;
-    }
-
-    #toggleInfo.show{
-      opacity:1;
-      pointer-events:auto;
-    }
-
-    /* Info panel */
-    #infoPanel{
-      position:fixed;
-      bottom:20px;
-      left:50%;
-      transform:translateX(-50%);
-      width:90%;
-      max-width:480px;
-      background:white;
-      color:black;
-      border-radius:16px;
-      padding:16px;
-      box-shadow:0 8px 30px rgba(0,0,0,.5);
-      display:none;
-      z-index:9999;
-    }
-
-    #infoPanel h3{
-      margin:0 0 8px;
-    }
-
-    #arContainer{
-      position:fixed;
-      bottom:20px;
-      left:50%;
-      transform:translateX(-50%);
-      z-index:9999;
-    }
-
-    canvas{
-      position:fixed;
-      inset:0;
-      width:100%;
-      height:100%;
-      touch-action: none;
-    }
-
-    /* Focus styles for accessibility */
-    #toggleInfo:focus,
-    #arContainer button:focus,
-    #arContainer a:focus {
-      outline:2px solid #fff;
-      outline-offset:2px;
-    }
+    html,body{ margin:0; height:100%; font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:black; color:white; }
+    #hint{ position:fixed; top:14px; left:50%; transform:translateX(-50%); padding:8px 14px; border-radius:999px; background:rgba(0,0,0,.6); z-index:9999; font-size:14px; pointer-events:none; }
+    #toggleInfo{ position:fixed; top:14px; right:14px; padding:8px 14px; border:none; border-radius:999px; background:rgba(255,255,255,.12); color:white; font-weight:bold; backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:.25s; z-index:9999; }
+    #toggleInfo.show{ opacity:1; pointer-events:auto; }
+    #infoPanel{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:90%; max-width:480px; background:white; color:black; border-radius:16px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,.5); display:none; z-index:9999; }
+    #infoPanel h3{ margin:0 0 8px; }
+    #arContainer{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; }
+    canvas{ position:fixed; inset:0; width:100%; height:100%; touch-action:none; }
+    #toggleInfo:focus, #arContainer button:focus, #arContainer a:focus { outline:2px solid #fff; outline-offset:2px; }
   </style>
 </head>
 
@@ -123,6 +43,12 @@
   </div>
 
   <div id="arContainer" aria-hidden="false"></div>
+
+  <!--
+    Notes:
+    - Provide both model.glb (for WebXR) and therapy-ball.usdz (for iOS Quick Look) in the same folder as these files.
+    - Serve over HTTPS or use localhost for testing WebXR and Quick Look.
+  -->
 
   <script type="module" src="main.js"></script>
 </body>

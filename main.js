@@ -30,19 +30,14 @@ function showToggle(){
 }
 
 //////////////////////////////////////////////////
-// Scene
+// Scene + Camera + Renderer
 //////////////////////////////////////////////////
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
 const isLowEnd = (() => {
-  // Simple heuristic: low devicePixelRatio or low memory hint
-  try {
-    return navigator.deviceMemory && navigator.deviceMemory <= 1;
-  } catch (e) {
-    return false;
-  }
+  try { return navigator.deviceMemory && navigator.deviceMemory <= 1; } catch (e) { return false; }
 })();
 
 const renderer = new THREE.WebGLRenderer({
@@ -59,7 +54,7 @@ document.body.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1));
 
 //////////////////////////////////////////////////
-// Model
+// Model loading (GLB for WebXR)
 //////////////////////////////////////////////////
 
 let ball = null;
@@ -69,15 +64,10 @@ loader.load(
   "model.glb",
   (gltf) => {
     ball = gltf.scene;
-    // If the model has a root transform, keep it but normalize scale
     ball.scale.setScalar(0.07);
     ball.visible = false;
-    // Disable automatic matrix updates for performance; we'll update manually
-    ball.traverse((o) => {
-      if (o.isMesh) {
-        o.matrixAutoUpdate = false;
-      }
-    });
+    // Freeze transforms consistently for all nodes to avoid nested transform issues
+    ball.traverse(o => o.matrixAutoUpdate = false);
     scene.add(ball);
     setHint("Move phone to detect surface");
   },
@@ -89,7 +79,7 @@ loader.load(
 );
 
 //////////////////////////////////////////////////
-// Reticle
+// Reticle (ring) for placement
 //////////////////////////////////////////////////
 
 const reticle = new THREE.Mesh(
@@ -102,7 +92,7 @@ reticle.visible = false;
 scene.add(reticle);
 
 //////////////////////////////////////////////////
-// Placement
+// Placement logic
 //////////////////////////////////////////////////
 
 function placeBall(pos){
@@ -126,24 +116,40 @@ controller.addEventListener("select", () => {
 scene.add(controller);
 
 //////////////////////////////////////////////////
-// Platform checks and AR button
+// Platform detection and AR entry
 //////////////////////////////////////////////////
 
+// Updated isiOS detection to correctly detect modern iPads running desktop-class UA
 function isiOS(){
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
 }
 
 if (isiOS()) {
-  // Quick Look for iOS (USDZ)
+  // Quick Look: user taps anchor to open native AR viewer on iOS
   const link = document.createElement("a");
   link.rel = "ar";
-  link.href = "therapy-ball.usdz";
+  link.href = "therapy-ball.usdz"; // provide this file on your server
+
+  // Optional preview image for better Quick Look UX (recommended)
+  const img = document.createElement("img");
+  img.src = "preview.jpg"; // optional thumbnail; include on server if used
+  img.alt = "Therapy Ball preview";
+  img.style.width = "200px";
+  img.style.display = "block";
+  img.style.marginBottom = "8px";
+
   const btn = document.createElement("button");
   btn.innerText = "View in AR";
   btn.style.padding = "12px 18px";
   btn.style.borderRadius = "10px";
   btn.style.border = "none";
   btn.style.fontWeight = "bold";
+
+  // Append preview and button (preview is optional; keep button for accessibility)
+  link.appendChild(img);
   link.appendChild(btn);
   arContainer.appendChild(link);
   setHint("Tap to open AR");
@@ -160,22 +166,20 @@ if (isiOS()) {
 }
 
 //////////////////////////////////////////////////
-// Hit test lifecycle
+// Hit test lifecycle and cleanup
 //////////////////////////////////////////////////
 
 let hitSource = null;
-let requested = false;
 
+// Create hit test source when session starts; lifecycle handles cleanup on session end
 renderer.xr.addEventListener('sessionstart', async () => {
   const session = renderer.xr.getSession();
   session.addEventListener('end', onSessionEnded);
   try {
     const viewerSpace = await session.requestReferenceSpace('viewer');
     hitSource = await session.requestHitTestSource({ space: viewerSpace });
-    requested = true;
   } catch (err) {
     console.warn('Hit test not available', err);
-    requested = true; // avoid retrying continuously
   }
 });
 
@@ -184,7 +188,6 @@ function onSessionEnded() {
     try { hitSource.cancel(); } catch (e) {}
     hitSource = null;
   }
-  requested = false;
   reticle.visible = false;
   setHint('Tap ENTER AR');
 }
@@ -195,9 +198,7 @@ function onSessionEnded() {
 
 renderer.setAnimationLoop((time, frame) => {
   if (frame) {
-    const session = renderer.xr.getSession();
     const refSpace = renderer.xr.getReferenceSpace();
-
     if (hitSource && refSpace) {
       const hits = frame.getHitTestResults(hitSource);
       if (hits.length) {
@@ -216,12 +217,11 @@ renderer.setAnimationLoop((time, frame) => {
       }
     }
   }
-
   renderer.render(scene, camera);
 });
 
 //////////////////////////////////////////////////
-// Resize
+// Resize and cleanup
 //////////////////////////////////////////////////
 
 window.addEventListener("resize", () => {
@@ -229,10 +229,6 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-//////////////////////////////////////////////////
-// Optional: graceful cleanup when unloading page
-//////////////////////////////////////////////////
 
 window.addEventListener("pagehide", () => {
   try {
