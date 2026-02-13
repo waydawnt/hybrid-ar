@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AR Therapy Ball</title>
+  <title>AR Massage Ball</title>
 
   <script type="importmap">
   {
@@ -14,26 +14,16 @@
   }
   </script>
 
-  <style>
-    html,body{ margin:0; height:100%; font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:black; color:white; }
-    #hint{ position:fixed; top:14px; left:50%; transform:translateX(-50%); padding:8px 14px; border-radius:999px; background:rgba(0,0,0,.6); z-index:9999; font-size:14px; pointer-events:none; }
-    #toggleInfo{ position:fixed; top:14px; right:14px; padding:8px 14px; border:none; border-radius:999px; background:rgba(255,255,255,.12); color:white; font-weight:bold; backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:.25s; z-index:9999; }
-    #toggleInfo.show{ opacity:1; pointer-events:auto; }
-    #infoPanel{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:90%; max-width:480px; background:white; color:black; border-radius:16px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,.5); display:none; z-index:9999; }
-    #infoPanel h3{ margin:0 0 8px; }
-    #arContainer{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; }
-    canvas{ position:fixed; inset:0; width:100%; height:100%; touch-action:none; }
-    #toggleInfo:focus, #arContainer button:focus, #arContainer a:focus { outline:2px solid #fff; outline-offset:2px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <div id="hint" role="status" aria-live="polite">Tap ENTER AR</div>
+  <div id="hint" role="status" aria-live="polite">Tap "START AR"</div>
 
   <button id="toggleInfo" aria-expanded="false" aria-controls="infoPanel">Info</button>
 
   <div id="infoPanel" role="region" aria-label="Therapy Ball information">
-    <h3>Therapy Ball</h3>
+    <h3>Massage Ball</h3>
     <ul>
       <li>Latex free — compact & portable</li>
       <li>Blunt spikes for better grip</li>
