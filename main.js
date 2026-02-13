@@ -14,7 +14,7 @@ function log(msg){
 }
 
 //////////////////////////////////////////////////////
-// Scene + performance tuned renderer
+// Scene + performance renderer
 //////////////////////////////////////////////////////
 
 const scene = new THREE.Scene();
@@ -33,7 +33,7 @@ renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
 
 //////////////////////////////////////////////////////
-// Light (cheap)
+// Lighting (cheap + mobile friendly)
 //////////////////////////////////////////////////////
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1));
@@ -48,12 +48,12 @@ new GLTFLoader().load("model.glb",(gltf)=>{
 
   ball = gltf.scene;
 
-  // Real-world scale: 7 cm diameter
+  // real-world scale (~7 cm)
   ball.scale.setScalar(0.07);
 
   ball.visible = false;
 
-  // freeze matrices for performance
+  // freeze transforms for performance
   ball.traverse(obj=>{
     obj.matrixAutoUpdate = false;
   });
@@ -65,7 +65,7 @@ new GLTFLoader().load("model.glb",(gltf)=>{
 });
 
 //////////////////////////////////////////////////////
-// Floating info panel
+// Surface info panel
 //////////////////////////////////////////////////////
 
 function createTextPanel(){
@@ -95,15 +95,13 @@ function createTextPanel(){
 
   const texture = new THREE.CanvasTexture(canvas);
 
-  const panel = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.25,0.12),
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(0.28,0.14),
     new THREE.MeshBasicMaterial({
       map:texture,
       transparent:true
     })
   );
-
-  return panel;
 }
 
 const infoPanel = createTextPanel();
@@ -111,12 +109,18 @@ infoPanel.visible = false;
 scene.add(infoPanel);
 
 //////////////////////////////////////////////////////
-// Reticle
+// Reticle (soft flash)
 //////////////////////////////////////////////////////
 
+let reticleTimer = null;
+
 const reticle = new THREE.Mesh(
-  new THREE.RingGeometry(.08,.1,32).rotateX(-Math.PI/2),
-  new THREE.MeshBasicMaterial({color:0x00aaff})
+  new THREE.RingGeometry(.06,.08,32).rotateX(-Math.PI/2),
+  new THREE.MeshBasicMaterial({
+    color:0xffffff,
+    transparent:true,
+    opacity:0.35
+  })
 );
 
 reticle.matrixAutoUpdate=false;
@@ -125,12 +129,36 @@ reticle.visible=false;
 scene.add(reticle);
 
 //////////////////////////////////////////////////////
-// Placement
+// Placement helpers
 //////////////////////////////////////////////////////
 
-function placeFallback(){
+function placeBall(position, quaternion){
 
   if(!ball) return;
+
+  ball.position.copy(position);
+  ball.quaternion.copy(quaternion);
+  ball.updateMatrix();
+
+  // surface anchored text
+  infoPanel.position.copy(ball.position)
+    .add(new THREE.Vector3(.12,0.003,-.02));
+
+  infoPanel.rotation.set(-Math.PI/2,0,0);
+
+  infoPanel.lookAt(
+    camera.position.x,
+    infoPanel.position.y,
+    camera.position.z
+  );
+
+  infoPanel.visible = true;
+  ball.visible = true;
+
+  reticle.visible = false;
+}
+
+function placeFallback(){
 
   const cam = renderer.xr.getCamera(camera);
 
@@ -144,20 +172,15 @@ function placeFallback(){
     .applyQuaternion(quat)
     .multiplyScalar(.4);
 
-  ball.position.copy(pos).add(forward);
-  ball.quaternion.copy(quat);
-  ball.updateMatrix();
+  pos.add(forward);
 
-  infoPanel.position.copy(ball.position).add(new THREE.Vector3(.15,.05,0));
-  infoPanel.visible = true;
-
-  ball.visible = true;
+  placeBall(pos, quat);
 
   log("Placed");
 }
 
 //////////////////////////////////////////////////////
-// Controller tap
+// Controller tap placement
 //////////////////////////////////////////////////////
 
 const controller = renderer.xr.getController(0);
@@ -166,14 +189,10 @@ controller.addEventListener("select",()=>{
 
   if(reticle.visible && ball){
 
-    ball.position.setFromMatrixPosition(reticle.matrix);
-    ball.quaternion.identity();
-    ball.updateMatrix();
+    const pos = new THREE.Vector3()
+      .setFromMatrixPosition(reticle.matrix);
 
-    infoPanel.position.copy(ball.position).add(new THREE.Vector3(.15,.05,0));
-    infoPanel.visible = true;
-
-    ball.visible=true;
+    placeBall(pos, new THREE.Quaternion());
 
     log("Placed on surface");
 
@@ -184,7 +203,7 @@ controller.addEventListener("select",()=>{
 scene.add(controller);
 
 //////////////////////////////////////////////////////
-// AR Button
+// AR button
 //////////////////////////////////////////////////////
 
 document.getElementById("arContainer").appendChild(
@@ -231,10 +250,17 @@ renderer.setAnimationLoop((t,frame)=>{
 
         const pose = hits[0].getPose(refSpace);
 
-        reticle.visible=true;
         reticle.matrix.fromArray(pose.transform.matrix);
 
-        log("Surface detected — tap");
+        if(!reticle.visible){
+
+          reticle.visible=true;
+
+          reticleTimer=setTimeout(()=>{
+            reticle.visible=false;
+          },500);
+
+        }
 
       }else{
 
@@ -242,13 +268,6 @@ renderer.setAnimationLoop((t,frame)=>{
         log("Scanning…");
 
       }
-    }
-
-    // billboard text always faces camera
-    if(infoPanel.visible){
-
-      infoPanel.lookAt(camera.position);
-
     }
   }
 
