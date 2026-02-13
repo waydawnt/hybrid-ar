@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>Three.js WebXR AR</title>
+<title>AR Therapy Ball</title>
 
 <script type="importmap">
 {
@@ -49,6 +49,19 @@ canvas {
 <body>
 
 <div id="hint">Tap ENTER AR</div>
+<button id="toggleInfo"
+style="
+position:fixed;
+bottom:70px;
+left:50%;
+transform:translateX(-50%);
+z-index:4000;
+padding:10px 16px;
+border-radius:8px;
+border:none;
+font-weight:bold;">
+Toggle Info
+</button>
 <div id="arContainer"></div>
 
 <script type="module" src="main.js"></script>

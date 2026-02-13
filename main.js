@@ -3,18 +3,26 @@ import { ARButton } from "three/addons/webxr/ARButton.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 //////////////////////////////////////////////////////
-// UI helper
+// UI helpers
 //////////////////////////////////////////////////////
 
 const hint = document.getElementById("hint");
+const toggleBtn = document.getElementById("toggleInfo");
 
 function log(msg){
   console.log("[AR]", msg);
   hint.textContent = msg;
 }
 
+let infoVisible = false;
+
+toggleBtn.onclick = () => {
+  infoVisible = !infoVisible;
+  infoPanel.visible = infoVisible && ball?.visible;
+};
+
 //////////////////////////////////////////////////////
-// Scene + performance renderer
+// Scene + renderer
 //////////////////////////////////////////////////////
 
 const scene = new THREE.Scene();
@@ -26,20 +34,16 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference:"high-performance"
 });
 
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.xr.enabled = true;
 
 document.body.appendChild(renderer.domElement);
 
-//////////////////////////////////////////////////////
-// Lighting (cheap + mobile friendly)
-//////////////////////////////////////////////////////
-
-scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1));
+scene.add(new THREE.HemisphereLight(0xffffff,0xbbbbff,1));
 
 //////////////////////////////////////////////////////
-// Therapy ball model
+// Therapy ball
 //////////////////////////////////////////////////////
 
 let ball;
@@ -47,16 +51,10 @@ let ball;
 new GLTFLoader().load("model.glb",(gltf)=>{
 
   ball = gltf.scene;
-
-  // real-world scale (~7 cm)
   ball.scale.setScalar(0.07);
-
   ball.visible = false;
 
-  // freeze transforms for performance
-  ball.traverse(obj=>{
-    obj.matrixAutoUpdate = false;
-  });
+  ball.traverse(o=>o.matrixAutoUpdate=false);
 
   scene.add(ball);
 
@@ -65,10 +63,10 @@ new GLTFLoader().load("model.glb",(gltf)=>{
 });
 
 //////////////////////////////////////////////////////
-// Surface info panel
+// Clean info card
 //////////////////////////////////////////////////////
 
-function createTextPanel(){
+function createInfoPanel(){
 
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
@@ -76,40 +74,43 @@ function createTextPanel(){
 
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  // white card
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  ctx.fillStyle = "white";
-  ctx.font = "28px sans-serif";
+  // border
+  ctx.strokeStyle = "#00aaff";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "#111";
+  ctx.font = "bold 30px sans-serif";
 
   const lines = [
-    "Latex free: Compact & portable",
-    "Blunt spikes provide better grip",
-    "Eco friendly version available",
-    "Suitable for sensitive skin"
+    "Latex free — compact & portable",
+    "Blunt spikes for better grip",
+    "Eco friendly tension relief",
+    "Safe for sensitive skin"
   ];
 
   lines.forEach((line,i)=>{
-    ctx.fillText(line, 40, 70 + i*90);
+    ctx.fillText(line,40,80+i*100);
   });
 
-  const texture = new THREE.CanvasTexture(canvas);
+  const tex = new THREE.CanvasTexture(canvas);
 
   return new THREE.Mesh(
-    new THREE.PlaneGeometry(0.28,0.14),
-    new THREE.MeshBasicMaterial({
-      map:texture,
-      transparent:true
-    })
+    new THREE.PlaneGeometry(0.30,0.15),
+    new THREE.MeshBasicMaterial({map:tex,transparent:true})
   );
 }
 
-const infoPanel = createTextPanel();
+const infoPanel = createInfoPanel();
 infoPanel.visible = false;
 scene.add(infoPanel);
 
 //////////////////////////////////////////////////////
-// Reticle (soft flash)
+// Reticle
 //////////////////////////////////////////////////////
 
 let reticleTimer = null;
@@ -119,7 +120,7 @@ const reticle = new THREE.Mesh(
   new THREE.MeshBasicMaterial({
     color:0xffffff,
     transparent:true,
-    opacity:0.35
+    opacity:.35
   })
 );
 
@@ -140,9 +141,10 @@ function placeBall(position, quaternion){
   ball.quaternion.copy(quaternion);
   ball.updateMatrix();
 
-  // surface anchored text
-  infoPanel.position.copy(ball.position)
-    .add(new THREE.Vector3(.12,0.003,-.02));
+  // place panel to RIGHT side
+  const offset = new THREE.Vector3(.18,0.003,0);
+
+  infoPanel.position.copy(ball.position).add(offset);
 
   infoPanel.rotation.set(-Math.PI/2,0,0);
 
@@ -152,7 +154,8 @@ function placeBall(position, quaternion){
     camera.position.z
   );
 
-  infoPanel.visible = true;
+  infoPanel.visible = infoVisible;
+
   ball.visible = true;
 
   reticle.visible = false;
@@ -180,7 +183,7 @@ function placeFallback(){
 }
 
 //////////////////////////////////////////////////////
-// Controller tap placement
+// Tap placement
 //////////////////////////////////////////////////////
 
 const controller = renderer.xr.getController(0);
@@ -192,7 +195,7 @@ controller.addEventListener("select",()=>{
     const pos = new THREE.Vector3()
       .setFromMatrixPosition(reticle.matrix);
 
-    placeBall(pos, new THREE.Quaternion());
+    placeBall(pos,new THREE.Quaternion());
 
     log("Placed on surface");
 
@@ -216,7 +219,7 @@ document.getElementById("arContainer").appendChild(
 );
 
 //////////////////////////////////////////////////////
-// Hit-test logic
+// Hit test loop
 //////////////////////////////////////////////////////
 
 let hitSource=null;
