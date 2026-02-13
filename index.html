@@ -46,26 +46,31 @@ canvas {
 
 #toggleInfo {
   position:fixed;
-  bottom:70px;
-  left:50%;
-  transform:translateX(-50%);
+  top:14px;
+  right:14px;
   z-index:9999;
 
-  padding:8px 16px;
+  padding:10px 14px;
   border-radius:999px;
   border:none;
+  font-weight:700;
 
-  font-weight:bold;
-  background:rgba(255,255,255,0.2);
-  color:white;
+  background:rgba(255,255,255,0.12);
+  color:#fff;
+  backdrop-filter: blur(6px);
 
-  backdrop-filter:blur(6px);
-
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
   opacity:0;
   pointer-events:none;
-  transition:.3s;
+  transition: transform .25s ease, opacity .25s ease;
+  transform: translateY(-6px);
 }
 
+#toggleInfo.show {
+  opacity:1;
+  pointer-events:auto;
+  transform: translateY(0);
+}
 </style>
 </head>
 
