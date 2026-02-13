@@ -107,24 +107,46 @@ resetBtn.onclick=()=>{
 // ENTER AR
 //////////////////////////////////////////////////////
 
-enterBtn.onclick=async()=>{
+enterBtn.onclick = async () => {
 
   log("Starting AR…");
-  enterWrapper.style.display="none";
+  enterWrapper.style.display = "none";
 
-  try{
+  try {
 
+    // Start AR session with minimal requirements
     await scene.enterVR();
 
-  }catch(e){
+    // Try enabling hit-test AFTER session starts
+    setTimeout(() => {
+
+      try {
+
+        camera.setAttribute(
+          "hit-test",
+          "target:#reticle"
+        );
+
+        log("Hit-test enabled");
+
+      } catch(e) {
+
+        console.warn("Hit-test unsupported:", e);
+        log("Fallback mode — no surface detection");
+
+      }
+
+    }, 500);
+
+  } catch(e) {
 
     console.error(e);
-
-    log("AR failed — check Chrome + ARCore");
-    enterWrapper.style.display="block";
+    log("AR session failed");
+    enterWrapper.style.display = "block";
 
   }
 };
+
 
 //////////////////////////////////////////////////////
 // SESSION EVENTS

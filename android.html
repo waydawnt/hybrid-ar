@@ -35,7 +35,6 @@
 <!-- SCENE -->
 <a-scene
   id="scene"
-
   vr-mode-ui="enabled:false"
   xr-mode-ui="enabled:false"
 
@@ -46,10 +45,11 @@
   "
 
   webxr="
-    requiredFeatures: hit-test, local-floor;
+    requiredFeatures: local-floor;
   "
 
   embedded>
+
 
   <!-- reticle -->
   <a-entity id="reticle" visible="false">
