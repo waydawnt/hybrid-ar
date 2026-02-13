@@ -1,45 +1,45 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>WebXR Placement (Android)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" href="android.css">
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/aframe-hit-test-component@3.0.0/dist/aframe-hit-test-component.min.js"></script>
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+<style>
+body { margin:0; overflow:hidden; }
+
+#hint {
+position: fixed;
+top: 20px;
+width: 100%;
+text-align: center;
+color: white;
+font-size: 18px;
+}
+</style>
 </head>
+
 <body>
-  <div id="hud">
-    <div id="hint">Initializing AR session…</div>
-    <div id="controls">
-      <button id="placeBtn" class="btn">Place / Move</button>
-      <button id="fallbackBtn" class="btn alt" style="display:none">Place Anyway</button>
-      <button id="resetBtn" class="btn alt">Reset</button>
-    </div>
-  </div>
 
-  <a-scene
-    vr-mode-ui="enabled: true"
-    xr-mode-ui="enabled: true"
-    renderer="colorManagement: true">
+<div id="hint">
+Move phone — object floats in front of you
+</div>
 
-    <!-- simple reticle ring -> we toggle visibility with hit-test component -->
-    <a-entity id="reticle" visible="false">
-      <a-ring id="reticleRing" radius-inner="0.06" radius-outer="0.08" rotation="-90 0 0" material="color:#08f;opacity:0.9"></a-ring>
-    </a-entity>
+<a-scene
+xr-mode-ui="enabled: true"
+vr-mode-ui="enabled: false">
 
-    <!-- camera uses the hit-test component; reticle param points to our reticle -->
-    <a-camera id="camera"
-      position="0 1.6 0"
-      wasd-controls-enabled="false"
-      look-controls="enabled:true"
-      hit-test="target: #reticle; type: footprint;">
-    </a-camera>
+<a-camera position="0 1.6 0"></a-camera>
 
-    <!-- model - initially hidden -->
-    <a-entity id="ball" gltf-model="model.glb" visible="false" scale="0.4 0.4 0.4"></a-entity>
-  </a-scene>
+<!-- model placed in front of camera -->
 
-  <script src="android.js"></script>
+<a-entity
+gltf-model="model.glb"
+position="0 1.4 -1.5"
+scale="0.4 0.4 0.4">
+</a-entity>
+
+</a-scene>
+
 </body>
 </html>
