@@ -1,7 +1,8 @@
 // main.js - robust Three.js WebXR AR starter
-import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-import { ARButton } from "https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js";
-import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+import * as THREE from "three";
+import { ARButton } from "three/addons/webxr/ARButton.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
 
 const hintEl = document.getElementById("hint");
 const arContainer = document.getElementById("arContainer");
