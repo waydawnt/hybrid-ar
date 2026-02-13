@@ -5,16 +5,15 @@
   <title>WebXR Placement (Android)</title>
 
   <link rel="stylesheet" href="android.css">
-
-  <!-- A-Frame + hit-test component -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-hit-test-component@3.0.0/dist/aframe-hit-test-component.min.js"></script>
 </head>
 <body>
   <div id="hud">
-    <div id="hint">Move phone to detect surface • Tap to place</div>
+    <div id="hint">Initializing AR session…</div>
     <div id="controls">
       <button id="placeBtn" class="btn">Place / Move</button>
+      <button id="fallbackBtn" class="btn alt" style="display:none">Place Anyway</button>
       <button id="resetBtn" class="btn alt">Reset</button>
     </div>
   </div>
@@ -24,17 +23,20 @@
     xr-mode-ui="enabled: true"
     renderer="colorManagement: true">
 
+    <!-- simple reticle ring -> we toggle visibility with hit-test component -->
     <a-entity id="reticle" visible="false">
-      <a-ring radius-inner="0.06" radius-outer="0.08" rotation="-90 0 0" material="color:#08f;opacity:0.85"></a-ring>
+      <a-ring id="reticleRing" radius-inner="0.06" radius-outer="0.08" rotation="-90 0 0" material="color:#08f;opacity:0.9"></a-ring>
     </a-entity>
 
+    <!-- camera uses the hit-test component; reticle param points to our reticle -->
     <a-camera id="camera"
       position="0 1.6 0"
       wasd-controls-enabled="false"
       look-controls="enabled:true"
-      hit-test="target: #ball; type: footprint; reticle: #reticle">
+      hit-test="target: #reticle; type: footprint;">
     </a-camera>
 
+    <!-- model - initially hidden -->
     <a-entity id="ball" gltf-model="model.glb" visible="false" scale="0.4 0.4 0.4"></a-entity>
   </a-scene>
 
