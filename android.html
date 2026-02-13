@@ -15,6 +15,7 @@ width: 100%;
 text-align: center;
 color: white;
 font-size: 18px;
+z-index: 999;
 }
 </style>
 </head>
@@ -22,20 +23,24 @@ font-size: 18px;
 <body>
 
 <div id="hint">
-Move phone — object floats in front of you
+Tap ENTER AR → model appears in camera
 </div>
 
 <a-scene
 xr-mode-ui="enabled: true"
-vr-mode-ui="enabled: false">
+vr-mode-ui="enabled: false"
+renderer="alpha:true; colorManagement:true;"
+background="color: transparent">
+
+<!-- AR camera -->
 
 <a-camera position="0 1.6 0"></a-camera>
 
-<!-- model placed in front of camera -->
+<!-- floating model -->
 
 <a-entity
 gltf-model="model.glb"
-position="0 1.4 -1.5"
+position="0 1.5 -1.5"
 scale="0.4 0.4 0.4">
 </a-entity>
 
