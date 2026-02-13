@@ -1,50 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WebXR Placement (Android)</title>
 
-<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <link rel="stylesheet" href="android.css">
 
-<style>
-body { margin:0; overflow:hidden; }
-
-#hint {
-position: fixed;
-top: 20px;
-width: 100%;
-text-align: center;
-color: white;
-font-size: 18px;
-z-index: 999;
-}
-</style>
+  <!-- A-Frame + hit-test component -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-hit-test-component@3.0.0/dist/aframe-hit-test-component.min.js"></script>
 </head>
-
 <body>
+  <!-- Large visible Enter AR button (so user always has a way to start AR) -->
+  <div id="enterWrapper">
+    <button id="enterAR">ENTER AR</button>
+    <div id="enterMsg">Tap to start the AR session</div>
+  </div>
 
-<div id="hint">
-Tap ENTER AR → model appears in camera
-</div>
+  <!-- HUD: hints and controls -->
+  <div id="hud">
+    <div id="hint">Initializing...</div>
+    <div id="controls">
+      <button id="placeBtn" class="btn">Place / Move</button>
+      <button id="fallbackBtn" class="btn alt" style="display:none">Place Anyway</button>
+      <button id="resetBtn" class="btn alt">Reset</button>
+    </div>
+  </div>
 
-<a-scene
-xr-mode-ui="enabled: true"
-vr-mode-ui="enabled: false"
-renderer="alpha:true; colorManagement:true;"
-background="color: transparent">
+  <a-scene
+    id="scene"
+    vr-mode-ui="enabled: true"
+    xr-mode-ui="enabled: true"
+    renderer="alpha:true; colorManagement:true;"
+    background="color: transparent">
 
-<!-- AR camera -->
+    <!-- reticle shown by hit-test -->
+    <a-entity id="reticle" visible="false">
+      <a-ring id="reticleRing" radius-inner="0.06" radius-outer="0.08" rotation="-90 0 0" material="color:#08f;opacity:0.9"></a-ring>
+    </a-entity>
 
-<a-camera position="0 1.6 0"></a-camera>
+    <!-- camera with hit-test; reticle param points to our reticle -->
+    <a-camera id="camera"
+      position="0 1.6 0"
+      wasd-controls-enabled="false"
+      look-controls="enabled:true"
+      hit-test="target: #reticle; type: footprint;">
+    </a-camera>
 
-<!-- floating model -->
+    <!-- model - initially hidden -->
+    <a-entity id="ball" gltf-model="model.glb" visible="false" scale="0.4 0.4 0.4"></a-entity>
 
-<a-entity
-gltf-model="model.glb"
-position="0 1.5 -1.5"
-scale="0.4 0.4 0.4">
-</a-entity>
+  </a-scene>
 
-</a-scene>
-
+  <script src="android.js"></script>
 </body>
 </html>

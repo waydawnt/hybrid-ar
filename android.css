@@ -1,6 +1,40 @@
 html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,Roboto,Arial}
-#hud{position:fixed;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;padding:14px;pointer-events:none;z-index:999}
-#hint{background:rgba(0,0,0,0.55);padding:10px 14px;border-radius:999px;margin-bottom:10px;pointer-events:auto}
-#controls{pointer-events:auto;display:flex;gap:10px}
-.btn{background:#06b6d4;border:0;padding:10px 14px;border-radius:10px;color:#002;font-weight:700;cursor:pointer}
+
+/* ENTER AR big button wrapper (centered) */
+#enterWrapper {
+  position: fixed;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  text-align: center;
+  pointer-events: auto;
+}
+
+#enterAR {
+  padding: 18px 28px;
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(180deg,#06b6d4,#02a9b0);
+  color: #022;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+  cursor: pointer;
+}
+
+#enterMsg {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #cfece7;
+}
+
+/* HUD controls */
+#hud{position:fixed;left:0;right:0;top:12px;display:flex;flex-direction:column;align-items:center;padding:10px;pointer-events:none;z-index:999}
+#hint{background:rgba(0,0,0,0.6);padding:8px 12px;border-radius:999px;margin-bottom:8px;pointer-events:auto;color:#e6f7f3}
+#controls{pointer-events:auto;display:flex;gap:8px}
+.btn{background:#06b6d4;border:0;padding:8px 12px;border-radius:10px;color:#002;font-weight:700;cursor:pointer}
 .btn.alt{background:rgba(255,255,255,0.12);color:#fff}
+
+/* ensure a-scene canvas covers whole screen */
+a-scene { position: fixed !important; inset: 0; width: 100vw; height: 100vh; }
