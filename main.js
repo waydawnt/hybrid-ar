@@ -3,7 +3,6 @@ import { ARButton } from "https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARB
 import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
 
 const hint = document.getElementById("hint");
-const enterBtn = document.getElementById("enterAR");
 
 function log(msg){
   console.log("[AR]", msg);
@@ -86,7 +85,7 @@ function placeFallback(){
 }
 
 //////////////////////////////////////////////////////
-// Controller tap
+// Controller tap placement
 //////////////////////////////////////////////////////
 
 const controller = renderer.xr.getController(0);
@@ -106,31 +105,27 @@ controller.addEventListener("select",()=>{
 });
 
 //////////////////////////////////////////////////////
-// REAL AR BUTTON
+// REAL AR BUTTON (styled)
 //////////////////////////////////////////////////////
 
-const realARButton = ARButton.createButton(renderer,{
+const arButton = ARButton.createButton(renderer,{
   requiredFeatures:["local-floor"],
   optionalFeatures:["hit-test"]
 });
 
-// hide original ARButton
-realARButton.style.display = "none";
+arButton.style.position = "fixed";
+arButton.style.bottom = "20px";
+arButton.style.left = "50%";
+arButton.style.transform = "translateX(-50%)";
+arButton.style.padding = "16px 24px";
+arButton.style.fontSize = "18px";
+arButton.style.fontWeight = "bold";
+arButton.style.borderRadius = "10px";
+arButton.style.background = "#00d0c0";
+arButton.style.color = "#002";
+arButton.innerText = "ENTER AR";
 
-document.body.appendChild(realARButton);
-
-//////////////////////////////////////////////////////
-// Forward custom button click
-//////////////////////////////////////////////////////
-
-enterBtn.onclick = () => {
-
-  log("Starting AR…");
-
-  realARButton.click();
-  enterBtn.style.display = "none";
-
-};
+document.body.appendChild(arButton);
 
 //////////////////////////////////////////////////////
 // XR frame loop
@@ -194,6 +189,8 @@ renderer.setAnimationLoop((timestamp,frame)=>{
 // Resize
 //////////////////////////////////////////////////////
 
-window.addEventListener("resize",() => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-})
+window.addEventListener("resize",()=>{
+
+  renderer.setSize(window.innerWidth,window.innerHeight);
+
+});
