@@ -1,57 +1,84 @@
 <!doctype html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>WebXR Placement (Android)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Android WebXR AR</title>
 
-  <link rel="stylesheet" href="android.css">
+<link rel="stylesheet" href="android.css">
 
-  <!-- A-Frame + hit-test component -->
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/aframe-hit-test-component@3.0.0/dist/aframe-hit-test-component.min.js"></script>
+<!-- UPDATED A-Frame -->
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+<!-- hit test -->
+<script src="https://cdn.jsdelivr.net/npm/aframe-hit-test-component@3.0.0/dist/aframe-hit-test-component.min.js"></script>
+
 </head>
+
 <body>
-  <!-- Large visible Enter AR button (so user always has a way to start AR) -->
-  <div id="enterWrapper">
-    <button id="enterAR">ENTER AR</button>
-    <div id="enterMsg">Tap to start the AR session</div>
+
+<!-- ENTER AR -->
+<div id="enterWrapper">
+  <button id="enterAR">ENTER AR</button>
+  <div id="enterMsg">Tap to start AR</div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="hint">Ready</div>
+  <div id="controls">
+    <button id="placeBtn" class="btn">Place</button>
+    <button id="fallbackBtn" class="btn alt" style="display:none">Place Anyway</button>
+    <button id="resetBtn" class="btn alt">Reset</button>
   </div>
+</div>
 
-  <!-- HUD: hints and controls -->
-  <div id="hud">
-    <div id="hint">Initializing...</div>
-    <div id="controls">
-      <button id="placeBtn" class="btn">Place / Move</button>
-      <button id="fallbackBtn" class="btn alt" style="display:none">Place Anyway</button>
-      <button id="resetBtn" class="btn alt">Reset</button>
-    </div>
-  </div>
+<!-- SCENE -->
+<a-scene
+  id="scene"
 
-  <a-scene
-    id="scene"
-    vr-mode-ui="enabled: true"
-    xr-mode-ui="enabled: true"
-    renderer="alpha:true; colorManagement:true;"
-    background="color: transparent">
+  vr-mode-ui="enabled:false"
+  xr-mode-ui="enabled:false"
 
-    <!-- reticle shown by hit-test -->
-    <a-entity id="reticle" visible="false">
-      <a-ring id="reticleRing" radius-inner="0.06" radius-outer="0.08" rotation="-90 0 0" material="color:#08f;opacity:0.9"></a-ring>
-    </a-entity>
+  renderer="
+    alpha:true;
+    colorManagement:true;
+    physicallyCorrectLights:true;
+  "
 
-    <!-- camera with hit-test; reticle param points to our reticle -->
-    <a-camera id="camera"
-      position="0 1.6 0"
-      wasd-controls-enabled="false"
-      look-controls="enabled:true"
-      hit-test="target: #reticle; type: footprint;">
-    </a-camera>
+  webxr="
+    requiredFeatures: hit-test, local-floor;
+  "
 
-    <!-- model - initially hidden -->
-    <a-entity id="ball" gltf-model="model.glb" visible="false" scale="0.4 0.4 0.4"></a-entity>
+  embedded>
 
-  </a-scene>
+  <!-- reticle -->
+  <a-entity id="reticle" visible="false">
+    <a-ring
+      radius-inner="0.06"
+      radius-outer="0.08"
+      rotation="-90 0 0"
+      material="color:#08f;opacity:0.9">
+    </a-ring>
+  </a-entity>
 
-  <script src="android.js"></script>
+  <!-- camera -->
+  <a-camera
+    id="camera"
+    wasd-controls-enabled="false"
+    hit-test="target:#reticle">
+  </a-camera>
+
+  <!-- model -->
+  <a-entity
+    id="ball"
+    gltf-model="model.glb"
+    visible="false"
+    scale="0.4 0.4 0.4">
+  </a-entity>
+
+</a-scene>
+
+<script src="android.js"></script>
+
 </body>
 </html>
