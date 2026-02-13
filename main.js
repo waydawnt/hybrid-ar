@@ -194,4 +194,6 @@ renderer.setAnimationLoop((timestamp,frame)=>{
 // Resize
 //////////////////////////////////////////////////////
 
-window.addEventListener("resize",()
+window.addEventListener("resize",() => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+})
