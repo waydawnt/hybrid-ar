@@ -106,11 +106,13 @@ function placeBall(pos){
 }
 
 const controller = renderer.xr.getController(0);
-controller.addEventListener("select", () => {
-  if(reticle.visible){
+controller.addEventListener("select", (ev) => {
+  // Only place when the last pointerdown was near the reticle (see pointerdown handler)
+  if (reticle.visible && lastTapNearReticle) {
     const pos = new THREE.Vector3().setFromMatrixPosition(reticle.matrix);
     placeBall(pos);
     reticle.visible = false;
+    lastTapNearReticle = false;
   }
 });
 scene.add(controller);
@@ -119,7 +121,6 @@ scene.add(controller);
 // Platform detection and AR entry
 //////////////////////////////////////////////////
 
-// Updated isiOS detection to correctly detect modern iPads running desktop-class UA
 function isiOS(){
   return (
     /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -128,14 +129,13 @@ function isiOS(){
 }
 
 if (isiOS()) {
-  // Quick Look: user taps anchor to open native AR viewer on iOS
   const link = document.createElement("a");
   link.rel = "ar";
-  link.href = "therapy-ball.usdz"; // provide this file on your server
+  link.href = "model.usdz"; // provide this file on your server
 
-  // Optional preview image for better Quick Look UX (recommended)
+  // Optional preview image (include preview.jpg on server if used)
   const img = document.createElement("img");
-  img.src = "preview.jpg"; // optional thumbnail; include on server if used
+  img.src = "preview.jpg";
   img.alt = "Therapy Ball preview";
   img.style.width = "200px";
   img.style.display = "block";
@@ -148,7 +148,7 @@ if (isiOS()) {
   btn.style.border = "none";
   btn.style.fontWeight = "bold";
 
-  // Append preview and button (preview is optional; keep button for accessibility)
+  // Append preview and button (preview optional)
   link.appendChild(img);
   link.appendChild(btn);
   arContainer.appendChild(link);
@@ -171,7 +171,6 @@ if (isiOS()) {
 
 let hitSource = null;
 
-// Create hit test source when session starts; lifecycle handles cleanup on session end
 renderer.xr.addEventListener('sessionstart', async () => {
   const session = renderer.xr.getSession();
   session.addEventListener('end', onSessionEnded);
@@ -191,6 +190,48 @@ function onSessionEnded() {
   reticle.visible = false;
   setHint('Tap ENTER AR');
 }
+
+//////////////////////////////////////////////////
+// Pointer-based placement guard
+//////////////////////////////////////////////////
+
+// Flag set when a pointerdown occurs near the reticle projection
+let lastTapNearReticle = false;
+const TAP_THRESHOLD_PX = 40; // pixels; adjust to taste
+
+// Reusable vectors to avoid allocations
+const _vReticleWorld = new THREE.Vector3();
+const _vProjected = new THREE.Vector3();
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  // Only consider primary button / primary touch
+  if (e.button && e.button !== 0) return;
+
+  if (!reticle.visible) {
+    lastTapNearReticle = false;
+    return;
+  }
+
+  // Canvas rect (handles full-window canvas or positioned canvas)
+  const rect = renderer.domElement.getBoundingClientRect();
+
+  // Get reticle world position and project to NDC
+  _vReticleWorld.setFromMatrixPosition(reticle.matrix);
+  _vProjected.copy(_vReticleWorld).project(camera);
+
+  // Convert NDC to screen coordinates relative to page
+  const screenX = ( _vProjected.x + 1 ) / 2 * rect.width + rect.left;
+  const screenY = ( -_vProjected.y + 1 ) / 2 * rect.height + rect.top;
+
+  const dx = e.clientX - screenX;
+  const dy = e.clientY - screenY;
+  const dist = Math.hypot(dx, dy);
+
+  lastTapNearReticle = dist <= TAP_THRESHOLD_PX;
+
+  // Clear the flag shortly after to avoid stale state
+  setTimeout(() => { lastTapNearReticle = false; }, 250);
+}, { passive: true });
 
 //////////////////////////////////////////////////
 // Render loop with hit testing
@@ -217,6 +258,7 @@ renderer.setAnimationLoop((time, frame) => {
       }
     }
   }
+
   renderer.render(scene, camera);
 });
 
