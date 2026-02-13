@@ -16,9 +16,23 @@ function log(msg){
 
 let infoVisible = false;
 
+function showToggle(){
+  toggleBtn.style.opacity = 1;
+  toggleBtn.style.pointerEvents = "auto";
+}
+
+function hideToggle(){
+  toggleBtn.style.opacity = 0;
+  toggleBtn.style.pointerEvents = "none";
+}
+
+hideToggle();
+
+
 toggleBtn.onclick = () => {
+  if(!ball || !ball.visible) return;
   infoVisible = !infoVisible;
-  infoPanel.visible = infoVisible && ball?.visible;
+  infoPanel.visible = infoVisible;
 };
 
 //////////////////////////////////////////////////////
@@ -74,17 +88,9 @@ function createInfoPanel(){
 
   const ctx = canvas.getContext("2d");
 
-  // white card
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // border
-  ctx.strokeStyle = "#00aaff";
-  ctx.lineWidth = 8;
-  ctx.strokeRect(0,0,canvas.width,canvas.height);
-
-  ctx.fillStyle = "#111";
-  ctx.font = "bold 30px sans-serif";
+  ctx.font = "bold 32px sans-serif";
 
   const lines = [
     "Latex free — compact & portable",
@@ -94,14 +100,28 @@ function createInfoPanel(){
   ];
 
   lines.forEach((line,i)=>{
-    ctx.fillText(line,40,80+i*100);
+
+    const y = 80 + i*100;
+
+    // glow outline
+    ctx.strokeStyle = "rgba(0,170,255,0.8)";
+    ctx.lineWidth = 6;
+    ctx.strokeText(line,40,y);
+
+    // main text
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(line,40,y);
+
   });
 
   const tex = new THREE.CanvasTexture(canvas);
 
   return new THREE.Mesh(
-    new THREE.PlaneGeometry(0.30,0.15),
-    new THREE.MeshBasicMaterial({map:tex,transparent:true})
+    new THREE.PlaneGeometry(0.34,0.17),
+    new THREE.MeshBasicMaterial({
+      map:tex,
+      transparent:true
+    })
   );
 }
 
@@ -134,7 +154,6 @@ scene.add(reticle);
 //////////////////////////////////////////////////////
 
 function placeBall(position, quaternion){
-
   if(!ball) return;
 
   ball.position.copy(position);
@@ -159,6 +178,8 @@ function placeBall(position, quaternion){
   ball.visible = true;
 
   reticle.visible = false;
+
+  showToggle();
 }
 
 function placeFallback(){

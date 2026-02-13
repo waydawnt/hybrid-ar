@@ -43,25 +43,38 @@ canvas {
   width:100%;
   height:100%;
 }
+
+#toggleInfo {
+  position:fixed;
+  bottom:70px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:4000;
+
+  padding:8px 16px;
+  border-radius:999px;
+  border:none;
+
+  font-weight:bold;
+  background:rgba(255,255,255,0.2);
+  color:white;
+
+  backdrop-filter:blur(6px);
+
+  opacity:0;
+  pointer-events:none;
+  transition:.3s;
+}
+
 </style>
 </head>
 
 <body>
 
 <div id="hint">Tap ENTER AR</div>
-<button id="toggleInfo"
-style="
-position:fixed;
-bottom:70px;
-left:50%;
-transform:translateX(-50%);
-z-index:4000;
-padding:10px 16px;
-border-radius:8px;
-border:none;
-font-weight:bold;">
-Toggle Info
-</button>
+<button id="toggleInfo">Info</button>
+
+
 <div id="arContainer"></div>
 
 <script type="module" src="main.js"></script>
