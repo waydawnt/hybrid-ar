@@ -11,11 +11,10 @@ function log(msg){
 }
 
 //////////////////////////////////////////////////////
-// Scene
+// Scene setup
 //////////////////////////////////////////////////////
 
 const scene = new THREE.Scene();
-
 const camera = new THREE.PerspectiveCamera();
 
 const renderer = new THREE.WebGLRenderer({
@@ -28,14 +27,10 @@ renderer.xr.enabled = true;
 
 document.body.appendChild(renderer.domElement);
 
-//////////////////////////////////////////////////////
-// Light
-//////////////////////////////////////////////////////
-
 scene.add(new THREE.HemisphereLight(0xffffff,0xbbbbff,1));
 
 //////////////////////////////////////////////////////
-// Load model
+// Model
 //////////////////////////////////////////////////////
 
 let model;
@@ -53,14 +48,13 @@ new GLTFLoader().load("model.glb",(gltf)=>{
 });
 
 //////////////////////////////////////////////////////
-// Hit test
+// Reticle
 //////////////////////////////////////////////////////
 
 let hitTestSource = null;
 let hitTestRequested = false;
-let reticle;
 
-reticle = new THREE.Mesh(
+const reticle = new THREE.Mesh(
   new THREE.RingGeometry(.08,.1,32).rotateX(-Math.PI/2),
   new THREE.MeshBasicMaterial()
 );
@@ -86,14 +80,13 @@ function placeFallback(){
 
   model.position.copy(cam.position).add(dir);
   model.quaternion.copy(cam.quaternion);
-
   model.visible = true;
 
-  log("Placed (fallback)");
+  log("Fallback placement");
 }
 
 //////////////////////////////////////////////////////
-// Controller tap placement
+// Controller tap
 //////////////////////////////////////////////////////
 
 const controller = renderer.xr.getController(0);
@@ -107,28 +100,40 @@ controller.addEventListener("select",()=>{
     model.visible = true;
 
     log("Placed on surface");
+
   }
 
 });
 
 //////////////////////////////////////////////////////
-// AR Button
+// REAL AR BUTTON
 //////////////////////////////////////////////////////
 
-enterBtn.onclick = ()=>{
+const realARButton = ARButton.createButton(renderer,{
+  requiredFeatures:["local-floor"],
+  optionalFeatures:["hit-test"]
+});
 
-  const button = ARButton.createButton(renderer,{
-    requiredFeatures:["local-floor"],
-    optionalFeatures:["hit-test"]
-  });
+// hide original ARButton
+realARButton.style.display = "none";
 
-  button.click();
+document.body.appendChild(realARButton);
 
-  enterBtn.style.display="none";
+//////////////////////////////////////////////////////
+// Forward custom button click
+//////////////////////////////////////////////////////
+
+enterBtn.onclick = () => {
+
+  log("Starting AR…");
+
+  realARButton.click();
+  enterBtn.style.display = "none";
+
 };
 
 //////////////////////////////////////////////////////
-// XR Frame loop
+// XR frame loop
 //////////////////////////////////////////////////////
 
 renderer.setAnimationLoop((timestamp,frame)=>{
@@ -149,13 +154,12 @@ renderer.setAnimationLoop((timestamp,frame)=>{
       });
 
       session.addEventListener("end",()=>{
-        hitTestRequested=false;
-        hitTestSource=null;
+        hitTestSource = null;
+        hitTestRequested = false;
       });
 
-      hitTestRequested=true;
+      hitTestRequested = true;
 
-      // guaranteed fallback placement
       setTimeout(placeFallback,800);
     }
 
@@ -171,12 +175,12 @@ renderer.setAnimationLoop((timestamp,frame)=>{
         reticle.visible = true;
         reticle.matrix.fromArray(pose.transform.matrix);
 
-        log("Surface detected — tap to place");
+        log("Surface detected — tap");
 
       }else{
 
         reticle.visible = false;
-        log("Scanning surfaces…");
+        log("Scanning…");
 
       }
     }
@@ -190,8 +194,4 @@ renderer.setAnimationLoop((timestamp,frame)=>{
 // Resize
 //////////////////////////////////////////////////////
 
-window.addEventListener("resize",()=>{
-
-  renderer.setSize(window.innerWidth,window.innerHeight);
-
-});
+window.addEventListener("resize",()
